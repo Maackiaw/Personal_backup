@@ -41,6 +41,7 @@ void chassis_task()
 			if (set_speed < 0 && right_distance < 15)
 			{
 			set_speed = 6000;
+				
 		  }
 		}
 	if (chassis_move.rc->sw1 == 3)
