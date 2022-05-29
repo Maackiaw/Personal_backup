@@ -339,7 +339,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F427xx</Define>
               <Undefine></Undefine>
-              <IncludePath>../Inc;                    ../Drivers/STM32F4xx_HAL_Driver/Inc;                    ../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;                    ../Drivers/CMSIS/Device/ST/STM32F4xx/Include;                    ../Drivers/CMSIS/Include;                    .\bsp;                    ..\application;                    ..\bsp\boards;             ../Middlewares/Third_Party/FreeRTOS/Source/include;             ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS;             ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F</IncludePath>
+              <IncludePath>../Inc;      ../Drivers/STM32F4xx_HAL_Driver/Inc;      ../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;      ../Drivers/CMSIS/Device/ST/STM32F4xx/Include;      ../Drivers/CMSIS/Include;      .\bsp;      ..\application;      ..\bsp\boards;      ../Middlewares/Third_Party/FreeRTOS/Source/include;      ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS;      ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;      ..\application\protocol;      ..\components\controller;      ..\components\support</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -1997,14 +1997,19 @@
               <FilePath>..\application\chassis_task.c</FilePath>
             </File>
             <File>
-              <FileName>pid.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\application\pid.c</FilePath>
-            </File>
-            <File>
               <FileName>PSD_adc.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\application\PSD_adc.c</FilePath>
+            </File>
+            <File>
+              <FileName>referee.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\application\referee.c</FilePath>
+            </File>
+            <File>
+              <FileName>referee_usart_task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\application\referee_usart_task.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -2015,6 +2020,11 @@
               <FileName>bsp_can.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\bsp\boards\bsp_can.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_usart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\bsp\boards\bsp_usart.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -2649,6 +2659,31 @@
                   </Cads>
                 </FileArmAds>
               </FileOption>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>support</GroupName>
+          <Files>
+            <File>
+              <FileName>CRC8_CRC16.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\components\support\CRC8_CRC16.c</FilePath>
+            </File>
+            <File>
+              <FileName>fifo.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\components\support\fifo.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>controller</GroupName>
+          <Files>
+            <File>
+              <FileName>pid.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\application\pid.c</FilePath>
             </File>
           </Files>
         </Group>

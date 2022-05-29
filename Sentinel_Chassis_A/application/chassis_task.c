@@ -16,7 +16,6 @@ void chassis_task()
 		chassis_move.rc = get_remote_control_point();
 		chassis_move.motor_chassis[0].chassis_motor_measure = get_chassis_motor_measure_point(0);
 	  const static fp32 motor_speed_pid[3] = {M3505_MOTOR_SPEED_PID_KP, M3505_MOTOR_SPEED_PID_KI, M3505_MOTOR_SPEED_PID_KD};
-		static int i = 0;
 		static int set_speed = 0;
     PID_init(&chassis_move.motor_speed_pid[0], PID_POSITION, motor_speed_pid, M3505_MOTOR_SPEED_PID_MAX_OUT, M3505_MOTOR_SPEED_PID_MAX_IOUT);
 		chassis_move.motor_speed_pid[0].out=0;

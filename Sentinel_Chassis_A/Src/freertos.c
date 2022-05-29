@@ -26,12 +26,13 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "chassis_task.h"
-
+#include "referee_usart_task.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 osThreadId chassisTaskHandle;
+osThreadId referee_usart_task_handle;
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -110,6 +111,9 @@ void MX_FREERTOS_Init(void) {
   /* add threads, ... */
 	  osThreadDef(ChassisTask, chassis_task, osPriorityAboveNormal, 0, 512);
     chassisTaskHandle = osThreadCreate(osThread(ChassisTask), NULL);
+		
+		osThreadDef(REFEREE, referee_usart_task, osPriorityNormal, 0, 128);
+    referee_usart_task_handle = osThreadCreate(osThread(REFEREE), NULL);
   /* USER CODE END RTOS_THREADS */
 
 }
