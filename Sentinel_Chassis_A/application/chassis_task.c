@@ -6,6 +6,7 @@
 #include "main.h"
 #include "adc.h"
 #include "cmsis_os.h"
+#include "bsp_rng.h"
 
 chassis_move_t chassis_move;
 extern uint16_t ADC_Value1[2];
@@ -18,6 +19,9 @@ fp32 output = 0;
 void chassis_task()
 {
 		static int set_power = 0;
+		static int rng1 = 0;
+		static int rng2 = 0;
+		static int count = 0;
 		//初始化 获取遥控器、底盘电机数据、裁判系统数据
 		chassis_move.rc = get_remote_control_point();
 		chassis_move.motor_chassis[0].chassis_motor_measure = get_chassis_motor_measure_point(0);
@@ -40,7 +44,7 @@ void chassis_task()
 	  right_distance = calc_distance(calc_voltage(ADC_Value1[1]));
 		
 		//遥控器控制底盘模式
-		if (chassis_move.rc->sw1 == 1)//遥控器sw1上 巡航 功率闭环
+		if (chassis_move.rc->sw1 == 1 && chassis_move.rc->sw2 == 2)//遥控器sw1上sw2下 巡航 功率闭环
 		{
 			if(set_power == 0)  
 			{
@@ -58,14 +62,16 @@ void chassis_task()
 		PID_calc(&chassis_move.motor_chassis[0].motor_power_pid[0],chassis_move.motor_chassis[0].chassis_power,set_power);	
 		output = chassis_move.motor_chassis[0].motor_power_pid[0].out;
 		}
-	if (chassis_move.rc->sw1 == 3)//遥控器sw1中 遥控器控制 速度闭环
+		
+	if (chassis_move.rc->sw1 == 3 && chassis_move.rc->sw2 == 2)//遥控器sw1中sw2下 遥控器控制 速度闭环
 	{
 		set_power = chassis_move.rc->ch1*15;
 		
 		PID_calc(&chassis_move.motor_chassis[0].motor_speed_pid[0],chassis_move.motor_chassis[0].chassis_motor_measure[0].speed_rpm,set_power);	
 		output = chassis_move.motor_chassis[0].motor_speed_pid[0].out;
 	}
-	if (chassis_move.rc->sw1 == 2)//遥控器sw1下 无力 速度闭环
+	
+	if (chassis_move.rc->sw1 == 2 && chassis_move.rc->sw2 == 2)//遥控器sw1 sw2下 无力 速度闭环
 	{
 		set_power = 0;
 		
@@ -73,10 +79,48 @@ void chassis_task()
 		output = chassis_move.motor_chassis[0].motor_speed_pid[0].out;
 	}
 	
+	if (chassis_move.rc->sw1 == 2 && chassis_move.rc->sw2 == 3)//遥控器sw1下 sw2中 随机变向 功率闭环
+	{
+		if (flag == count)
+		{
+			if (rng2 == 1)
+			{
+				set_power = 30;
+			}
+			else if (rng2 == 2)
+			{
+				set_power = -30;
+			}
+		}
+		if (rng1 > 0 && rng1 <= 4000)
+		{
+			rng1--;
+		}
+		if (count <= 0)
+		{
+			rng1 = RNG_get_random_rangle(1000,4000);
+			flag = rng1;
+			rng2 = RNG_get_random_rangle(1,2);
+		}
+		if (set_power >= 0 && left_distance < 35)
+		{
+			set_power = -30;
+		}
+		if (set_power < 0 && right_distance < 35)
+		{
+			set_power = 30;
+		}
+		
+		PID_calc(&chassis_move.motor_chassis[0].motor_power_pid[0],chassis_move.motor_chassis[0].chassis_power,set_power);	
+		output = chassis_move.motor_chassis[0].motor_power_pid[0].out;
+		
+	}
+	
+	
 		CAN_cmd_chassis(output,0,0,0);
 	
 		vTaskDelay(1);
 		//CAN_cmd_chassis(0,0,0,0);
-		flag=chassis_move.rc->sw1;
+		//flag=chassis_move.rc->sw1;
 	}
 }
