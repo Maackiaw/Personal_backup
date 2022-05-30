@@ -172,7 +172,6 @@ void get_chassis_power_and_buffer(fp32 *power, fp32 *buffer)
 {
     *power = power_heat_data_t.chassis_power;
     *buffer = power_heat_data_t.chassis_power_buffer;
-
 }
 
 
@@ -192,4 +191,3 @@ void get_shoot_heat1_limit_and_heat1(uint16_t *heat1_limit, uint16_t *heat1)
     *heat1_limit = robot_state.shooter_heat1_cooling_limit;
     *heat1 = power_heat_data_t.shooter_heat1;
 }
-

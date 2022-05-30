@@ -337,9 +337,9 @@
             <v6Rtti>0</v6Rtti>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>USE_HAL_DRIVER,STM32F427xx</Define>
+              <Define>USE_HAL_DRIVER,STM32F427xx,ARM_MATH_CM4</Define>
               <Undefine></Undefine>
-              <IncludePath>../Inc;      ../Drivers/STM32F4xx_HAL_Driver/Inc;      ../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;      ../Drivers/CMSIS/Device/ST/STM32F4xx/Include;      ../Drivers/CMSIS/Include;      .\bsp;      ..\application;      ..\bsp\boards;      ../Middlewares/Third_Party/FreeRTOS/Source/include;      ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS;      ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;      ..\application\protocol;      ..\components\controller;      ..\components\support</IncludePath>
+              <IncludePath>../Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;.\bsp;..\application;..\bsp\boards;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;..\application\protocol;..\components\controller;..\components\support;..\components\algorithm\Include</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -2010,6 +2010,11 @@
               <FileName>referee_usart_task.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\application\referee_usart_task.c</FilePath>
+            </File>
+            <File>
+              <FileName>chassis_power_control.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\application\chassis_power_control.c</FilePath>
             </File>
           </Files>
         </Group>

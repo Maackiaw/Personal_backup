@@ -2,7 +2,11 @@
 #include "CAN_receive.h"
 #include "pid.h"
 #include "bsp_uart.h"
+#include "referee.h"
 
+#define M3505_MOTOR_POWER_PID_KP 200
+#define M3505_MOTOR_POWER_PID_KI 0
+#define M3505_MOTOR_POWER_PID_KD 0
 #define M3505_MOTOR_SPEED_PID_KP 20
 #define M3505_MOTOR_SPEED_PID_KI 0
 #define M3505_MOTOR_SPEED_PID_KD 0
@@ -14,13 +18,16 @@
 typedef struct
 {
   const motor_measure_t *chassis_motor_measure;
+	fp32 chassis_power;
+	fp32 chassis_power_buffer;
+  pid_type_def motor_speed_pid[4];
+	pid_type_def motor_power_pid[4];
 } chassis_motor_t;
 
 typedef struct
 {
   const rc_info_t *rc;
   chassis_motor_t motor_chassis[4];
-  pid_type_def motor_speed_pid[4];
 } chassis_move_t;
 
 extern void chassis_task();
