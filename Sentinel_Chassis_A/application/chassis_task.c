@@ -98,7 +98,7 @@ void chassis_task()
 		}
 		if (count <= 0)
 		{
-			rng1 = RNG_get_random_rangle(1000,4000);
+			rng1 = RNG_get_random_rangle(2300,5000);
 			flag = rng1;
 			rng2 = RNG_get_random_rangle(1,2);
 		}
