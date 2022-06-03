@@ -24,9 +24,9 @@
 #include "arm_math.h"
 //#include "detect_task.h"
 //#include "remote_control.h"
-#define POWER_LIMIT 80.0f
-#define WARNING_POWER 40.0f
-#define WARNING_POWER_BUFF 50.0f
+#define POWER_LIMIT 30.0f
+#define WARNING_POWER 15.0f
+#define WARNING_POWER_BUFF 100.0f
 
 #define NO_JUDGE_TOTAL_CURRENT_LIMIT 64000.0f //16000 * 4,
 //extern cap_measure_t cap_measure;
@@ -41,7 +41,7 @@
   * @param[in]      chassis_power_control: 底盘数据
   * @retval         none
   */
-    uint16_t max_power_limit = 40;
+    fp32 max_power_limit = 30.0f;
 		uint8_t cap_state=0;
 void chassis_power_control(chassis_move_t *chassis_power_control)
 {
@@ -87,7 +87,7 @@ void chassis_power_control(chassis_move_t *chassis_power_control)
         if (chassis_power_buffer < WARNING_POWER_BUFF)
         {
             fp32 power_scale;
-            if (chassis_power_buffer > 5.0f)
+            if (chassis_power_buffer > 20.0f)
             {
                 //scale down WARNING_POWER_BUFF
                 //缩小WARNING_POWER_BUFF
@@ -96,7 +96,7 @@ void chassis_power_control(chassis_move_t *chassis_power_control)
             else
             {
                 //only left 10% of WARNING_POWER_BUFF
-                power_scale = 5.0f / WARNING_POWER_BUFF;
+                power_scale = 20.0f / WARNING_POWER_BUFF;
             }
             //scale down
             //缩小

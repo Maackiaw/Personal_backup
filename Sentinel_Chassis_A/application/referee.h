@@ -179,6 +179,7 @@ extern void init_referee_struct_data(void);
 extern void referee_data_solve(uint8_t *frame);
 
 extern void get_chassis_power_and_buffer(fp32 *power, fp32 *buffer);
+extern const ext_power_heat_data_t *get_chassis_power_point(void);
 
 extern uint8_t get_robot_id(void);
 

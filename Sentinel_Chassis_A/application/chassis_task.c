@@ -7,6 +7,8 @@
 #include "adc.h"
 #include "cmsis_os.h"
 #include "bsp_rng.h"
+#include "referee.h"
+
 
 chassis_move_t chassis_move;
 extern uint16_t ADC_Value1[2];
@@ -18,24 +20,36 @@ fp32 output = 0;
 //底盘任务
 void chassis_task()
 {
-		static int set_power = 0;
+		static fp32 set_power = 0.0f;
+	  static fp32 set_power_buffer = 0;
 		static int rng1 = 0;
 		static int rng2 = 0;
 		static int count = 0;
+		static uint16_t power_buffer = 100;
+	  //static fp32 chassis_power = 0.0f;
+    //static fp32 chassis_power_buffer = 0.0f;
 		//初始化 获取遥控器、底盘电机数据、裁判系统数据
 		chassis_move.rc = get_remote_control_point();
 		chassis_move.motor_chassis[0].chassis_motor_measure = get_chassis_motor_measure_point(0);
-		get_chassis_power_and_buffer(&chassis_move.motor_chassis[0].chassis_power, &chassis_move.motor_chassis[0].chassis_power_buffer);
+    //get_chassis_power_and_buffer(&chassis_power, &chassis_power_buffer);
+	  //get_chassis_power_and_buffer(&chassis_move.chassis_power, &chassis_move.chassis_power_buffer);
+		chassis_move.power_heat_data_t = get_chassis_power_point();
+
 	
 		//PID初始化
 	  const static fp32 motor_power_pid[3] = {M3505_MOTOR_POWER_PID_KP, M3505_MOTOR_POWER_PID_KI, M3505_MOTOR_POWER_PID_KD};//功率闭环PID
+		const static fp32 motor_power_buffer_pid[3] = {M3505_MOTOR_POWER_BUFFER_PID_KP, M3505_MOTOR_POWER_BUFFER_PID_KI, M3505_MOTOR_POWER_BUFFER_PID_KD};//缓冲能量闭环PID
 		const static fp32 motor_speed_pid[3] = {M3505_MOTOR_SPEED_PID_KP, M3505_MOTOR_SPEED_PID_KI, M3505_MOTOR_SPEED_PID_KD};//速度闭环PID
 		
     PID_init(&chassis_move.motor_chassis[0].motor_speed_pid[0], PID_POSITION, motor_speed_pid, M3505_MOTOR_SPEED_PID_MAX_OUT, M3505_MOTOR_SPEED_PID_MAX_IOUT);
 		PID_init(&chassis_move.motor_chassis[0].motor_power_pid[0], PID_POSITION, motor_power_pid, M3505_MOTOR_SPEED_PID_MAX_OUT, M3505_MOTOR_SPEED_PID_MAX_IOUT);
+		PID_init(&chassis_move.motor_chassis[0].motor_power_buffer_pid[0], PID_POSITION, motor_power_buffer_pid, M3505_MOTOR_SPEED_PID_MAX_OUT, M3505_MOTOR_SPEED_PID_MAX_IOUT);
+
 		
 		chassis_move.motor_chassis[0].motor_speed_pid[0].out=0;
 		chassis_move.motor_chassis[0].motor_power_pid[0].out=0;
+		chassis_move.motor_chassis[0].motor_power_buffer_pid[0].out=0;
+
 
 	while(1)
 	{
@@ -48,18 +62,18 @@ void chassis_task()
 		{
 			if(set_power == 0)  
 			{
-				set_power =30;
+				set_power =30.0;
 			}
 			if (set_power >= 0 && left_distance < 35)
 			{
-				set_power = -30;
+				set_power = -30.0;
 			}
 			if (set_power < 0 && right_distance < 35)
 			{
-			set_power = 30;
+				set_power = 30.0;
 		  }
 			
-		PID_calc(&chassis_move.motor_chassis[0].motor_power_pid[0],chassis_move.motor_chassis[0].chassis_power,set_power);	
+		PID_calc(&chassis_move.motor_chassis[0].motor_power_pid[0],chassis_move.power_heat_data_t->chassis_power,set_power);	
 		output = chassis_move.motor_chassis[0].motor_power_pid[0].out;
 		}
 		
@@ -81,6 +95,8 @@ void chassis_task()
 	
 	if (chassis_move.rc->sw1 == 2 && chassis_move.rc->sw2 == 3)//遥控器sw1下 sw2中 随机变向 功率闭环
 	{
+//		if (chassis_move.power_heat_data_t->chassis_power_buffer >= power_buffer)
+//		{
 		if (flag == count)
 		{
 			if (rng2 == 1)
@@ -98,7 +114,7 @@ void chassis_task()
 		}
 		if (count <= 0)
 		{
-			rng1 = RNG_get_random_rangle(2300,5000);
+			rng1 = RNG_get_random_rangle(2800,5500);
 			flag = rng1;
 			rng2 = RNG_get_random_rangle(1,2);
 		}
@@ -107,13 +123,21 @@ void chassis_task()
 			set_power = -30;
 		}
 		if (set_power < 0 && right_distance < 35)
-		{
+		{  
 			set_power = 30;
 		}
 		
-		PID_calc(&chassis_move.motor_chassis[0].motor_power_pid[0],chassis_move.motor_chassis[0].chassis_power,set_power);	
-		output = chassis_move.motor_chassis[0].motor_power_pid[0].out;
-		
+		if (chassis_move.power_heat_data_t->chassis_power_buffer >= 100)
+		{
+				PID_calc(&chassis_move.motor_chassis[0].motor_power_pid[0],chassis_move.power_heat_data_t->chassis_power,set_power);
+				output = chassis_move.motor_chassis[0].motor_power_pid[0].out;
+		}
+		else if (chassis_move.power_heat_data_t->chassis_power_buffer < 100)
+		{
+				PID_calc(&chassis_move.motor_chassis[0].motor_power_buffer_pid[0],chassis_move.power_heat_data_t->chassis_power_buffer,130);
+				PID_calc(&chassis_move.motor_chassis[0].motor_power_pid[0],chassis_move.power_heat_data_t->chassis_power,set_power);
+				output = chassis_move.motor_chassis[0].motor_power_pid[0].out + chassis_move.motor_chassis[0].motor_power_buffer_pid[0].out;
+		}
 	}
 	
 	
