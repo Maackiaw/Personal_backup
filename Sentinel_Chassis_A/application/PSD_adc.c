@@ -21,9 +21,9 @@ float calc_distance(float voltage){
 		distance= param_g/(voltage-constant_g)-0.42;
 	else
 		distance = param_l/(voltage-constant_l)-0.42;
-	if(distance>70||distance<=5)
+	if(distance>100||distance<=3)
 	{
-		return 100;
+		return 10086;
 	}
 	else
 	{

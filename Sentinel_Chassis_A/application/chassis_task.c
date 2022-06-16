@@ -22,6 +22,8 @@ void chassis_task()
 {
 		static fp32 set_power = 0.0f;
 	  static fp32 set_power_buffer = 0;
+		static int last_time = 0;
+		static fp32 last_set_power = 0;
 		static int rng1 = 0;
 		static int rng2 = 0;
 		static int count = 0;
@@ -64,17 +66,27 @@ void chassis_task()
 			{
 				set_power =30.0;
 			}
-			if (set_power >= 0 && left_distance < 35)
+			if (set_power >= 0 && right_distance < 35)
 			{
 				set_power = -30.0;
-			}
-			if (set_power < 0 && right_distance < 35)
+			} 
+			if (set_power < 0 && left_distance < 50)
 			{
 				set_power = 30.0;
 		  }
 			
-		PID_calc(&chassis_move.motor_chassis[0].motor_power_pid[0],chassis_move.power_heat_data_t->chassis_power,set_power);	
-		output = chassis_move.motor_chassis[0].motor_power_pid[0].out;
+			last_set_power = set_power;
+			last_time++;
+			if (last_set_power != set_power && last_time > 0)
+			{
+				set_power = last_set_power;
+			}
+		//PID_calc(&chassis_move.motor_chassis[0].motor_power_pid[0],chassis_move.power_heat_data_t->chassis_power,set_power);	
+		//output = chassis_move.motor_chassis[0].motor_power_pid[0].out;
+			
+				PID_calc(&chassis_move.motor_chassis[0].motor_power_buffer_pid[0],chassis_move.power_heat_data_t->chassis_power_buffer,130);
+				PID_calc(&chassis_move.motor_chassis[0].motor_power_pid[0],chassis_move.power_heat_data_t->chassis_power,set_power);
+				output = chassis_move.motor_chassis[0].motor_power_pid[0].out + chassis_move.motor_chassis[0].motor_power_buffer_pid[0].out;
 		}
 		
 	if (chassis_move.rc->sw1 == 3 && chassis_move.rc->sw2 == 2)//遥控器sw1中sw2下 遥控器控制 速度闭环
