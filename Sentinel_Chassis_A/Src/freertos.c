@@ -27,12 +27,15 @@
 /* USER CODE BEGIN Includes */
 #include "chassis_task.h"
 #include "referee_usart_task.h"
+#include "bsp_imu.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 osThreadId chassisTaskHandle;
 osThreadId referee_usart_task_handle;
+osThreadId IMUTaskHandle;
+
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -114,6 +117,9 @@ void MX_FREERTOS_Init(void) {
 		
 		osThreadDef(REFEREE, referee_usart_task, osPriorityNormal, 0, 512);
     referee_usart_task_handle = osThreadCreate(osThread(REFEREE), NULL);
+		
+		osThreadDef(IMU, IMU_task, osPriorityNormal, 0, 512);
+		IMUTaskHandle = osThreadCreate(osThread(IMU), NULL);
   /* USER CODE END RTOS_THREADS */
 
 }

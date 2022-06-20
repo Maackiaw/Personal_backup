@@ -8,7 +8,7 @@
 #include "cmsis_os.h"
 #include "bsp_rng.h"
 #include "referee.h"
-
+#include "bsp_imu.h"
 
 chassis_move_t chassis_move;
 extern uint16_t ADC_Value1[2];
@@ -21,13 +21,10 @@ fp32 output = 0;
 void chassis_task()
 {
 		static fp32 set_power = 0.0f;
-	  static fp32 set_power_buffer = 0;
-		static int last_time = 0;
-		static fp32 last_set_power = 0;
-		static int rng1 = 0;
-		static int rng2 = 0;
+		static int time = 0;
+		static int rng = 0;
 		static int count = 0;
-		static uint16_t power_buffer = 100;
+		static int count2 = 100;
 	  //static fp32 chassis_power = 0.0f;
     //static fp32 chassis_power_buffer = 0.0f;
 		//初始化 获取遥控器、底盘电机数据、裁判系统数据
@@ -36,7 +33,9 @@ void chassis_task()
     //get_chassis_power_and_buffer(&chassis_power, &chassis_power_buffer);
 	  //get_chassis_power_and_buffer(&chassis_move.chassis_power, &chassis_move.chassis_power_buffer);
 		chassis_move.power_heat_data_t = get_chassis_power_point();
-
+		chassis_move.mpu_data = get_mpu_point();
+		//初始化底盘状态
+		chassis_move.chassis_state = chassis_move.chassis_last_state = CHASSIS_RC;
 	
 		//PID初始化
 	  const static fp32 motor_power_pid[3] = {M3505_MOTOR_POWER_PID_KP, M3505_MOTOR_POWER_PID_KI, M3505_MOTOR_POWER_PID_KD};//功率闭环PID
@@ -59,102 +58,185 @@ void chassis_task()
 		left_distance = calc_distance(calc_voltage(ADC_Value1[0]));
 	  right_distance = calc_distance(calc_voltage(ADC_Value1[1]));
 		
+		
 		//遥控器控制底盘模式
 		if (chassis_move.rc->sw1 == 1 && chassis_move.rc->sw2 == 2)//遥控器sw1上sw2下 巡航 功率闭环
 		{
-			if(set_power == 0)  
+			//防撞检测 红外传感器判断
+			if(chassis_move.chassis_state == CHASSIS_RC)
 			{
-				set_power =30.0;
+				chassis_move.chassis_state = CHASSIS_SPEED_POSITIVE;
 			}
-			if (set_power >= 0 && right_distance < 35)
+			if (chassis_move.chassis_state == CHASSIS_SPEED_POSITIVE && right_distance < 50)
 			{
-				set_power = -30.0;
-			} 
-			if (set_power < 0 && left_distance < 50)
+				chassis_move.chassis_state = CHASSIS_SPEED_NEGATIVE;
+				time = 0;
+			}
+			if (chassis_move.chassis_state == CHASSIS_SPEED_NEGATIVE && left_distance < 50)
 			{
-				set_power = 30.0;
+				chassis_move.chassis_state = CHASSIS_SPEED_POSITIVE;
+				time = 0;
 		  }
+			time ++;
 			
-			last_set_power = set_power;
-			last_time++;
-			if (last_set_power != set_power && last_time > 0)
+			//判断时间 是否卡住
+			if (time > 5000)
 			{
-				set_power = last_set_power;
-			}
-		//PID_calc(&chassis_move.motor_chassis[0].motor_power_pid[0],chassis_move.power_heat_data_t->chassis_power,set_power);	
-		//output = chassis_move.motor_chassis[0].motor_power_pid[0].out;
+				if (chassis_move.chassis_state == CHASSIS_SPEED_POSITIVE)
+				{
+					chassis_move.chassis_state = CHASSIS_SPEED_NEGATIVE;
+				}
+				else if (chassis_move.chassis_state == CHASSIS_SPEED_POSITIVE)
+				{
+					chassis_move.chassis_state = CHASSIS_SPEED_POSITIVE;
+				}
 			
-				PID_calc(&chassis_move.motor_chassis[0].motor_power_buffer_pid[0],chassis_move.power_heat_data_t->chassis_power_buffer,130);
-				PID_calc(&chassis_move.motor_chassis[0].motor_power_pid[0],chassis_move.power_heat_data_t->chassis_power,set_power);
-				output = chassis_move.motor_chassis[0].motor_power_pid[0].out + chassis_move.motor_chassis[0].motor_power_buffer_pid[0].out;
+			}
+			
+			
+			
+			
+			
+			//防撞检测 陀螺仪加速度判断
+//			switch(step)
+//			{
+//				case 1:
+//					if (set_power >= 0 && abs(chassis_move.mpu_data->ay) >= 800)
+//					{
+//							set_power = -30;
+//							step = 2;
+//					}
+//					else
+//					{
+//							set_power = 30;
+//					}
+//					break;
+//				case 2:
+//					if (set_power < 0 && abs(chassis_move.mpu_data->ay) >= 800)
+//					{
+//						set_power = 30;
+//						step = 1;
+//					}
+//					else
+//					{
+//							set_power = -30;
+//					}
+//					break;
+////			}
+
+//count2 ++;
+//if (count2 >= 100)
+//{
+//			if (set_power >= 0 && abs(chassis_move.mpu_data->ay) >= 800)
+//			{
+//				set_power = -30;
+//				time = 0;
+//				count2 = 0;
+//			}
+//			else if (set_power < 0 && abs(chassis_move.mpu_data->ay >= 800))
+//			{
+//				set_power = 30;
+//				time = 0;
+//				count2 = 0;
+//			}
+//}
 		}
 		
 	if (chassis_move.rc->sw1 == 3 && chassis_move.rc->sw2 == 2)//遥控器sw1中sw2下 遥控器控制 速度闭环
 	{
-		set_power = chassis_move.rc->ch1*15;
-		
-		PID_calc(&chassis_move.motor_chassis[0].motor_speed_pid[0],chassis_move.motor_chassis[0].chassis_motor_measure[0].speed_rpm,set_power);	
-		output = chassis_move.motor_chassis[0].motor_speed_pid[0].out;
+		chassis_move.chassis_state = CHASSIS_RC;
 	}
 	
 	if (chassis_move.rc->sw1 == 2 && chassis_move.rc->sw2 == 2)//遥控器sw1 sw2下 无力 速度闭环
 	{
-		set_power = 0;
-		
-		PID_calc(&chassis_move.motor_chassis[0].motor_speed_pid[0],chassis_move.motor_chassis[0].chassis_motor_measure[0].speed_rpm,set_power);
-		output = chassis_move.motor_chassis[0].motor_speed_pid[0].out;
+		chassis_move.chassis_state = CHASSIS_UNABLE;
 	}
 	
 	if (chassis_move.rc->sw1 == 2 && chassis_move.rc->sw2 == 3)//遥控器sw1下 sw2中 随机变向 功率闭环
 	{
-//		if (chassis_move.power_heat_data_t->chassis_power_buffer >= power_buffer)
-//		{
-		if (flag == count)
+		//随机变向
+		if (count == 0)//count = 0
 		{
-			if (rng2 == 1)
+			if (chassis_move.chassis_last_state == CHASSIS_SPEED_NEGATIVE)
 			{
-				set_power = 30;
+				chassis_move.chassis_state = CHASSIS_SPEED_POSITIVE;
 			}
-			else if (rng2 == 2)
+			if (chassis_move.chassis_last_state == CHASSIS_SPEED_POSITIVE)
 			{
-				set_power = -30;
+				chassis_move.chassis_state = CHASSIS_SPEED_NEGATIVE;
 			}
 		}
-		if (rng1 > 0 && rng1 <= 4000)
+		if (count > 0 && count <= 4000)
 		{
-			rng1--;
+			count--;
 		}
 		if (count <= 0)
 		{
-			rng1 = RNG_get_random_rangle(2800,5500);
-			flag = rng1;
-			rng2 = RNG_get_random_rangle(1,2);
+			rng = RNG_get_random_rangle(1800,3000);
+			count = rng;
 		}
-		if (set_power >= 0 && left_distance < 35)
+		
+		//防撞检测
+			if (chassis_move.chassis_state == CHASSIS_SPEED_POSITIVE && right_distance < 50)
+			{
+				chassis_move.chassis_state = CHASSIS_SPEED_NEGATIVE;
+			}
+			if (chassis_move.chassis_state == CHASSIS_SPEED_NEGATIVE && left_distance < 50)
+			{
+				chassis_move.chassis_state = CHASSIS_SPEED_POSITIVE;
+		  }
+	}
+		
+	
+	
+	
+	
+	
+	
+	//判断状态机
+		if (chassis_move.chassis_state == CHASSIS_SPEED_POSITIVE)
+		{
+			set_power =30;
+		}	
+		else if (chassis_move.chassis_state == CHASSIS_SPEED_NEGATIVE)
 		{
 			set_power = -30;
 		}
-		if (set_power < 0 && right_distance < 35)
-		{  
-			set_power = 30;
+		else if (chassis_move.chassis_state == CHASSIS_RC)
+		{
+			set_power = chassis_move.rc->ch1*15;
+		}
+		else if (chassis_move.chassis_state == CHASSIS_UNABLE)
+		{
+			output = 0;
 		}
 		
-		if (chassis_move.power_heat_data_t->chassis_power_buffer >= 100)
+		chassis_move.chassis_last_state = chassis_move.chassis_state;
+
+		
+		//遥控器控制 速度闭环
+		if (chassis_move.chassis_state ==CHASSIS_RC)
 		{
-				PID_calc(&chassis_move.motor_chassis[0].motor_power_pid[0],chassis_move.power_heat_data_t->chassis_power,set_power);
-				output = chassis_move.motor_chassis[0].motor_power_pid[0].out;
+			PID_calc(&chassis_move.motor_chassis[0].motor_speed_pid[0],chassis_move.motor_chassis[0].chassis_motor_measure[0].speed_rpm,set_power);	
+			output = chassis_move.motor_chassis[0].motor_speed_pid[0].out;
 		}
-		else if (chassis_move.power_heat_data_t->chassis_power_buffer < 100)
+		
+		
+		//巡航 随机变向 功率+缓冲能量闭环
+		if (chassis_move.chassis_state == CHASSIS_SPEED_POSITIVE || chassis_move.chassis_state == CHASSIS_SPEED_NEGATIVE)
 		{
+		
+		if (chassis_move.power_heat_data_t->chassis_power_buffer <= 100)
+			{
 				PID_calc(&chassis_move.motor_chassis[0].motor_power_buffer_pid[0],chassis_move.power_heat_data_t->chassis_power_buffer,130);
-				PID_calc(&chassis_move.motor_chassis[0].motor_power_pid[0],chassis_move.power_heat_data_t->chassis_power,set_power);
-				output = chassis_move.motor_chassis[0].motor_power_pid[0].out + chassis_move.motor_chassis[0].motor_power_buffer_pid[0].out;
+			}
+  	PID_calc(&chassis_move.motor_chassis[0].motor_power_pid[0],chassis_move.power_heat_data_t->chassis_power,set_power);
+		output = chassis_move.motor_chassis[0].motor_power_pid[0].out + chassis_move.motor_chassis[0].motor_power_buffer_pid[0].out;
+			
 		}
-	}
-	
-	
+		
 		CAN_cmd_chassis(output,0,0,0);
-	
+		
 		vTaskDelay(1);
 		//CAN_cmd_chassis(0,0,0,0);
 		//flag=chassis_move.rc->sw1;

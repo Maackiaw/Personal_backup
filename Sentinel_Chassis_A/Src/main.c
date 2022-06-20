@@ -23,6 +23,7 @@
 #include "can.h"
 #include "dma.h"
 #include "rng.h"
+#include "spi.h"
 #include "usart.h"
 #include "gpio.h"
 
@@ -31,6 +32,7 @@
 #include "bsp_uart.h"
 #include "chassis_task.h"
 #include "bsp_can.h"
+#include "bsp_imu.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -52,8 +54,8 @@
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
 extern rc_info_t rc;
-char buf[200];
-int count;
+//char buf[200];
+//int count;
 uint16_t ADC_Value1[2];
 /* USER CODE END PV */
 
@@ -105,11 +107,14 @@ int main(void)
   MX_CAN2_Init();
   MX_ADC1_Init();
   MX_RNG_Init();
+  MX_SPI5_Init();
   /* USER CODE BEGIN 2 */
 	led_off();
 	/* open dbus uart receive it */
 	dbus_uart_init();
 	can_filter_init();
+	mpu_device_init();
+	init_quaternion();		
 	HAL_GPIO_WritePin(GPIOF, LED_GREEN_Pin,GPIO_PIN_RESET);
 //		HAL_ADC_Start_DMA(&hadc2,(uint32_t *)&ADC_Value2,1);
 		HAL_ADC_Start_DMA(&hadc1,(uint32_t *)ADC_Value1,2);
@@ -129,7 +134,6 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-		
 //	sprintf(buf, "CH1: %4d  CH2: %4d  CH3: %4d  CH4: %4d  SW1: %1d  SW2: %1d \n", rc.ch1, rc.ch2, rc.ch3, rc.ch4, rc.sw1, rc.sw2);
 //	HAL_UART_Transmit(&huart6, (uint8_t *)buf, (COUNTOF(buf) - 1), 55);
 //	HAL_Delay(50);	
